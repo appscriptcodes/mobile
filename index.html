@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#3b82f6" />
+  <title>Global Hillview - Mobile Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    window.ENV_GAS_URL = "https://script.google.com/macros/s/AKfycbzLI4SRxlLJq-9QAfGdYAX93f6PDMB0IYjZoL6MIZiSjQoZO9UPCxIXouRBVQPQ2bYRIA/exec";
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: 'Inter', sans-serif;
+      overscroll-behavior-y: none;
+      -webkit-overflow-scrolling: touch;
+      touch-action: manipulation;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    /* Hide scrollbars on mobile */
+    @media (max-width: 768px) {
+      body::-webkit-scrollbar { display: none; }
+      body { -ms-overflow-style: none; scrollbar-width: none; }
+    }
+    
+    /* Mobile Bottom Navigation */
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: var(--card-bg);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-around;
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-bottom-nav { display: none; }
+    }
+    
+    .mobile-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      padding: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s ease;
+    }
+    
+    .mobile-nav-item:active { transform: scale(0.95); }
+    .mobile-nav-item.active { color: #3b82f6; }
+    .mobile-nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 3px;
+      background: #3b82f6;
+      border-radius: 0 0 3px 3px;
+    }
+    
+    .mobile-nav-icon { width: 24px; height: 24px; margin-bottom: 4px; }
+    .mobile-nav-label { font-size: 10px; font-weight: 500; }
+    
+    /* Mobile Header */
+    .mobile-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-header { display: none; }
+    }
+    
+    /* Touch optimized buttons */
+    .touch-btn {
+      min-height: 48px;
+      min-width: 48px;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s ease;
+    }
+    .touch-btn:active { transform: scale(0.97); }
+    
+    /* Loading Spinner */
+    .spinner { 
+      border: 3px solid var(--border-color); 
+      border-top: 3px solid #3b82f6; 
+      border-radius: 50%; 
+      width: 24px; 
+      height: 24px; 
+      animation: spin 0.8s linear infinite; 
+    }
+    
+    @keyframes spin { 
+      0% { transform: rotate(0deg); } 
+      100% { transform: rotate(360deg); } 
+    }
+    
+    /* Enhanced Dark Mode Variables */
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --bg-tertiary: #f3f4f6;
+      --text-primary: #111827;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --border-color: #e5e7eb;
+      --hover-bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --header-bg: #ffffff;
+      --input-bg: #ffffff;
+      --input-border: #d1d5db;
+    }
+    
+    [data-theme="dark"] {
+      --bg-primary: #1f2937;
+      --bg-secondary: #111827;
+      --bg-tertiary: #374151;
+      --text-primary: #f9fafb;
+      --text-secondary: #d1d5db;
+      --text-tertiary: #9ca3af;
+      --border-color: #374151;
+      --hover-bg: #374151;
+      --card-bg: #1f2937;
+      --header-bg: #1f2937;
+      --input-bg: #374151;
+      --input-border: #4b5563;
+    }
+    
+    /* Smooth transitions */
+    * {
+      transition-property: background-color, border-color, color;
+      transition-duration: 200ms;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Dark mode overrides */
+    [data-theme="dark"] body { background: var(--bg-secondary); color: var(--text-primary); }
+    [data-theme="dark"] .bg-white { background: var(--card-bg) !important; color: var(--text-primary) !important; }
+    [data-theme="dark"] .bg-gray-50 { background: var(--bg-secondary) !important; }
+    [data-theme="dark"] .bg-gray-100 { background: var(--bg-tertiary) !important; }
+    [data-theme="dark"] .text-gray-900 { color: var(--text-primary) !important; }
+    [data-theme="dark"] .text-gray-600 { color: var(--text-secondary) !important; }
+    [data-theme="dark"] .border-gray-200,
+    [data-theme="dark"] .border-gray-300 { border-color: var(--border-color) !important; }
+    
+    /* Input styles */
+    [data-theme="dark"] input,
+    [data-theme="dark"] select,
+    [data-theme="dark"] textarea {
+      background-color: var(--input-bg) !important;
+      border-color: var(--input-border) !important;
+      color: var(--text-primary) !important;
+    }
+    
+    [data-theme="dark"] input::placeholder,
+    [data-theme="dark"] textarea::placeholder {
+      color: var(--text-tertiary) !important;
+    }
+    
+    /* Modal styles - Full screen on mobile */
+    .modal-overlay { 
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0, 0, 0, 0.5); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      z-index: 9999; 
+      backdrop-filter: blur(4px);
+    }
+    
+    .modal-content { 
+      background: var(--card-bg); 
+      border-radius: 16px; 
+      max-width: 800px; 
+      width: 90%; 
+      max-height: 90vh; 
+      overflow-y: auto;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        padding-bottom: 70px; /* Space for bottom nav */
+      }
+    }
+    
+    /* Status badges */
+    .status-badge { 
+      display: inline-flex; 
+      align-items: center; 
+      padding: 4px 12px; 
+      border-radius: 12px; 
+      font-size: 0.75rem; 
+      font-weight: 500; 
+    }
+    
+    .status-open { background: #fef3c7; color: #92400e; }
+    .status-inprogress { background: #dbeafe; color: #1e40af; }
+    .status-resolved { background: #d1fae5; color: #065f46; }
+    
+    [data-theme="dark"] .status-open { background-color: #78350f !important; color: #fef3c7 !important; }
+    [data-theme="dark"] .status-inprogress { background-color: #1e3a8a !important; color: #dbeafe !important; }
+    [data-theme="dark"] .status-resolved { background-color: #064e3b !important; color: #d1fae5 !important; }
+    
+    /* Star Rating Styles */
+    .star-rating-container {
+      margin-top: 1.5rem;
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 2px solid #bae6fd;
+      border-radius: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    [data-theme="dark"] .star-rating-container {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a7b 100%);
+      border-color: #3b82f6;
+    }
+
+    .star {
+      color: #d1d5db;
+      font-size: 2.5rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+
+    .star:hover { transform: scale(1.2) rotate(5deg); }
+    .star.filled { color: #fbbf24; animation: starPulse 0.3s ease; }
+    .star.active { color: #f59e0b; }
+
+    @keyframes starPulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    .rating-submitted {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 1.25rem;
+      border-radius: 0.75rem;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.125rem;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    
+    /* Card hover effect */
+    .card-hover { 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+      cursor: pointer; 
+    }
+    
+    .card-hover:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
+    }
+    
+    /* Fade in animation */
+    .fade-in { 
+      animation: fadeIn 0.3s ease-in; 
+    }
+    
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    /* Filter buttons */
+    .filter-btn { transition: all 0.2s ease; }
+    .filter-btn.active { background: #3b82f6; color: white; }
+    
+    [data-theme="dark"] .filter-btn {
+      background-color: var(--bg-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    
+    [data-theme="dark"] .filter-btn.active {
+      background-color: #3b82f6;
+      color: white;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      body { padding-bottom: 70px; }
+      .desktop-sidebar, .desktop-header { display: none !important; }
+      
+      /* Make tables scrollable on mobile */
+      .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      /* Larger touch targets */
+      button, a, .clickable {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      /* Hide desktop-only elements */
+      .desktop-only { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <div id="root">
+    <div class="min-h-screen flex items-center justify-center">
+      <div class="text-center">
+        <div class="spinner mx-auto mb-4"></div>
+        <p class="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/babel">
+  const { useEffect, useState, useMemo, useRef } = React;
+
+  // ✅ GLOBAL DATE FORMATTER (DD-Mon-YYYY)
+  const formatDateDisplay = (val) => {
+    if (!val) return '-';
+    if (typeof val === 'string' && /^\d{1,2}-[A-Za-z]{3}-\d{4}$/.test(val)) return val;
+    
+    if (typeof val === 'string' && /^\d{1,2}-\d{1,2}-\d{4}$/.test(val)) {
+      const [d, m, y] = val.split('-');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${d.padStart(2,'0')}-${months[parseInt(m)-1]}-${y}`;
+    }
+
+    const date = new Date(val);
+    if (isNaN(date.getTime())) return val;
+    
+    const d = String(date.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d}-${months[date.getMonth()]}-${date.getFullYear()}`;
+  };
+
+  // ✅ GAS URL Configuration
+  const qs = new URLSearchParams(location.search);
+  const GAS = qs.get('gas') || window.ENV_GAS_URL || '';
+  console.log('🔗 Using GAS URL:', GAS);
+
+  // ✅ Excel Export Helper
+  const ExcelExport = {
+    exportToExcel: (data, filename) => {
+      if (typeof XLSX === 'undefined') {
+        alert('Excel library not loaded. Please refresh.');
+        return;
+      }
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+      XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+  };
+
+  // ✅ Google Drive Direct Link Generator
+  function driveDirectLink(url, size = 100) {
+    if (!url) return "";
+    const match1 = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    const id = (match1 && match1[1]) || (match2 && match2[1]);
+    return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w${size}` : url;
+  }
+
+  // ✅ Tower and Flat Configuration
+  const CATEGORIES = [
+  'Housekeeping',
+  'Plumbing',
+  'Water',
+  'Electricity',
+  'Lifts',
+  'Parking',
+  'Security',
+  'STP',
+  'Other'
+];
+
+  const TOWERS = ['1', '2', '3', '4', '5'];
+  const FLOORS = Array.from({length: 19}, (_, i) => i + 1);
+  const FLATS_PER_FLOOR = ['01', '02', '03', '04', '05', '06', '07', '08'];
+
+  function generateFlatNumbers(tower) {
+    const flats = [];
+    const maxFloor = tower === '3' ? 18 : 19;
+    for (let floor = 1; floor <= maxFloor; floor++) {
+      FLATS_PER_FLOOR.forEach(flat => {
+        flats.push(`${floor}${flat}`);
+      });
+    }
+    return flats;
+  }
+
+  // ✅ Fetch with Timeout
+  async function fetchWithTimeout(url, opts = {}, ms = 12000) {
+    const ctl = new AbortController();
+    const id = setTimeout(() => ctl.abort(), ms);
+    try { return await fetch(url, { ...opts, signal: ctl.signal }); }
+    finally { clearTimeout(id); }
+  }
+
+  // ✅ GET with JSONP Fallback (for CORS issues)
+  async function getJSON(action, extra = {}, timeoutMs = 12000) {
+    if (!GAS) throw new Error('Backend not configured');
+    const u = new URL(GAS);
+    u.searchParams.set('action', action);
+    for (const [k, v] of Object.entries(extra)) u.searchParams.set(k, v);
+
+    try {
+      const r = await fetchWithTimeout(u, { cache: 'no-store' }, timeoutMs);
+      if (!r.ok) throw new Error(await r.text().catch(() => r.statusText));
+      return r.json();
+    } catch (corsError) {
+      console.log('⚠️ CORS failed, trying JSONP fallback...', corsError);
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_' + Date.now();
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        u.searchParams.set('callback', callbackName);
+        script.src = u.toString();
+        script.onerror = () => reject(new Error('JSONP request failed'));
+        document.body.appendChild(script);
+        setTimeout(() => {
+          if (window[callbackName]) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            reject(new Error('Request timeout'));
+          }
+        }, timeoutMs);
+      });
+    }
+  }
+
+  // ✅ POST with Extended Timeout for File Uploads
+  async function postPlain(body) {
+    if (!GAS) throw new Error('Backend not configured');
+    const r = await fetchWithTimeout(GAS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    }, 60000);
+    if (!r.ok) throw new Error(await r.text().catch(() => r.statusText));
+    return r.json();
+  }
+
+  // ✅ Dark Mode Hook
+  function useDarkMode() {
+    const [theme, setTheme] = useState(() => 
+      localStorage.getItem('theme') || 'light'
+    );
+
+    useEffect(() => {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    
+    return [theme, toggleTheme];
+  }
+
+  // ✅ Theme Toggle Component
+  function ThemeToggle({ theme, toggleTheme }) {
+    return (
+      <button
+        onClick={toggleTheme}
+        className="touch-btn p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? (
+          <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+        )}
+      </button>
+    );
+  }
+
+  // ✅ Export Button Component
+  function ExportButton({ data, filename, label = "Export" }) {
+    return (
+      <button
+        onClick={() => ExcelExport.exportToExcel(data, filename)}
+        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2 transition-colors touch-btn"
+        title="Export to Excel"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span className="hidden sm:inline">{label}</span>
+      </button>
+    );
+  }
+
+  // ✅ File Upload Handler (Converts to Base64 and uploads to Drive)
+  async function maybeUploadField(obj, sheet, field, namePrefix = field.toLowerCase()) {
+    const val = obj[field];
+    if (!val || typeof val !== 'string' || !val.startsWith('data:')) return obj;
+
+    const mimeMatch = val.match(/data:([^;]+)(;base64)?/);
+    const mime = (mimeMatch && mimeMatch[1]) || 'application/octet-stream';
+    const ext = (mime.split('/')[1] || 'bin').replace('+xml','');
+
+    const res = await postPlain({
+      op: 'uploadFile',
+      sheet,
+      fileName: `${namePrefix}_${Date.now()}.${ext}`,
+      fileData: val
+    });
+
+    if (!res.ok) throw new Error(res.error || 'Upload failed');
+    obj[field] = res.file.url;
+    return obj;
+  }
+
+  // ✅ Toast Notification System
+  function showToast(message, type='info') {
+    const toastContainer = document.getElementById('toast-container') || (() => {
+      const div = document.createElement('div');
+      div.id = 'toast-container';
+      div.className = 'fixed top-4 right-4 z-50 flex flex-col gap-2';
+      document.body.appendChild(div);
+      return div;
+    })();
+    
+    const toast = document.createElement('div');
+    const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+    toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg fade-in`;
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // ✅ API Client
+  const api = {
+    async login(u, p) {
+      try {
+        return await postPlain({op:'login', username:u, password:p});
+      } catch {
+        return getJSON('login', {u, p});
+      }
+    },
+    async sessionInfo(token) {
+      return postPlain({op:'sessionInfo', token});
+    },
+    async changePassword(username, oldPassword, newPassword) { 
+      return postPlain({ op: 'changePassword', username, oldPassword, newPassword }); 
+    },
+    list: {
+      Directory: () => getJSON('listDirectory'),
+      Notices: () => getJSON('listNotices'),
+      Issues: () => getJSON('listIssues'),
+      Transactions: () => getJSON('listTransactions'),
+      Documents: () => getJSON('listDocuments'),
+      Voters: () => getJSON('listVoters'),
+      OpeningBalances: () => getJSON('listOpeningBalances').catch(() => ({rows:[]})),
+      ChartOfAccounts: () => getJSON('listChartOfAccounts').catch(() => ({rows:[]})),
+      Tenants: () => getJSON('listTenants')
+    },
+    async upsertRow(sheet, key, row) {
+      return postPlain({op:'upsertRow', sheet, key, row});
+    },
+    async createRow(sheet, row) {
+      return postPlain({op:'createRow', sheet, row});
+    }
+  };
+
+  // ✅ Currency Formatter
+  const INR = new Intl.NumberFormat('en-IN', { 
+    style:'currency', 
+    currency:'INR', 
+    maximumFractionDigits:0 
+  });
+
+
+// ✅ LOGIN SCREEN - Mobile Optimized
+function LoginScreen({ onSuccess }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
+    try {
+      const r = await api.login(username, password);
+      if (r?.ok && r?.token) {
+        localStorage.setItem('session', r.token);
+        onSuccess({
+          token: r.token,
+          role: (r.role || 'user').toLowerCase(),
+          username: r.username || username
+        });
+        showToast('Welcome back!', 'success');
+      } else {
+        setError(r?.error || 'Invalid credentials');
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 fade-in">
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 bg-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">Global Hillview</h1>
+            <p className="text-gray-600 mt-2">Society Management Portal</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg touch-btn"
+                placeholder="Enter your username"
+                required
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg touch-btn"
+                placeholder="Enter your password"
+                required
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-btn"
+            >
+              {loading && <div className="spinner" />}
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setUsername('demo'); setPassword('demo'); }}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-lg transition-colors touch-btn"
+            >
+              Use Demo Account
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ MOBILE HEADER COMPONENT
+function MobileHeader({ session, theme, toggleTheme, onRefresh, loading, onPasswordChange, onLogout }) {
+  const [showMenu, setShowMenu] = useState(false);
+
+  return (
+    <div className="mobile-header">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-base font-semibold text-gray-900">Global Hillview</h1>
+            <p className="text-xs text-gray-500">{session.username}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onRefresh}
+            className="touch-btn p-2 hover:bg-gray-100 rounded-lg"
+            disabled={loading}
+          >
+            <svg className={`w-5 h-5 text-gray-600 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
+
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            className="touch-btn p-2 hover:bg-gray-100 rounded-lg relative"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Dropdown Menu */}
+      {showMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
+          <div className="absolute right-4 top-16 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 min-w-[200px]">
+            <button
+              onClick={() => { onPasswordChange(); setShowMenu(false); }}
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-3"
+            >
+              <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+              <span className="text-sm">Change Password</span>
+            </button>
+            <button
+              onClick={() => { onLogout(); setShowMenu(false); }}
+              className="w-full text-left px-4 py-3 hover:bg-gray-50 flex items-center gap-3 text-red-600"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span className="text-sm">Logout</span>
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ✅ BOTTOM NAVIGATION COMPONENT
+function BottomNavigation({ activeView, onNavigate, isAdmin }) {
+  const navItems = [
+    { 
+      id: 'dashboard', 
+      label: 'Home', 
+      icon: (
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      )
+    },
+    { 
+      id: 'Directory', 
+      label: 'Staff', 
+      icon: (
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      )
+    },
+    { 
+      id: 'Issues', 
+      label: 'Issues', 
+      icon: (
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      )
+    },
+    { 
+      id: 'Notices', 
+      label: 'Notices', 
+      icon: (
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      )
+    },
+    { 
+      id: 'more', 
+      label: 'More', 
+      icon: (
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+      )
+    }
+  ];
+
+  return (
+    <div className="mobile-bottom-nav">
+      {navItems.map(item => (
+        <button
+          key={item.id}
+          onClick={() => onNavigate(item.id)}
+          className={`mobile-nav-item ${activeView === item.id ? 'active' : ''}`}
+        >
+          <svg className="mobile-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {item.icon}
+          </svg>
+          <span className="mobile-nav-label">{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ✅ MORE MENU MODAL (for "More" tab in bottom nav)
+function MoreMenuModal({ isAdmin, onNavigate, onClose }) {
+  const menuItems = [
+    { id: 'Documents', label: 'Documents', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', public: true },
+    { id: 'Voters', label: 'Voters', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', public: true },
+    { id: 'Tenants', label: 'Tenants', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', public: false },
+    { id: 'Transactions', label: 'Transactions', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', public: false },
+    { id: 'OpeningBalances', label: 'Balances', icon: 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z', public: false },
+    { id: 'ChartOfAccounts', label: 'Accounts', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', public: false }
+  ];
+
+  const visibleItems = menuItems.filter(item => item.public || isAdmin);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">More Options</h3>
+            <button onClick={onClose} className="touch-btn p-2 hover:bg-gray-100 rounded-lg">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div className="p-4 grid grid-cols-3 gap-4">
+          {visibleItems.map(item => (
+            <button
+              key={item.id}
+              onClick={() => { onNavigate(item.id); onClose(); }}
+              className="flex flex-col items-center gap-2 p-4 rounded-lg hover:bg-gray-50 transition-colors touch-btn"
+            >
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
+                </svg>
+              </div>
+              <span className="text-xs font-medium text-center">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ CHANGE PASSWORD MODAL
+function ChangePasswordModal({ username, onClose }) {
+  const [formData, setFormData] = useState({ oldPass: '', newPass: '', confirmPass: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!formData.oldPass || !formData.newPass) return showToast('Please fill all fields', 'error');
+    if (formData.newPass !== formData.confirmPass) return showToast('New passwords do not match', 'error');
+    
+    setLoading(true);
+    try {
+      const res = await api.changePassword(username, formData.oldPass, formData.newPass);
+      if (res.ok) {
+        showToast('Password changed successfully!', 'success');
+        onClose();
+      } else {
+        showToast(res.error || 'Failed to change password', 'error');
+      }
+    } catch (e) {
+      showToast('Error: ' + e.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-xl font-semibold">Change Password</h3>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Old Password</label>
+            <input type="password" 
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+              value={formData.oldPass} onChange={e => setFormData({...formData, oldPass: e.target.value})} 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <input type="password" 
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+              value={formData.newPass} onChange={e => setFormData({...formData, newPass: e.target.value})} 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <input type="password" 
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+              value={formData.confirmPass} onChange={e => setFormData({...formData, confirmPass: e.target.value})} 
+            />
+          </div>
+        </div>
+        <div className="p-6 border-t border-gray-200 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50 touch-btn">Cancel</button>
+          <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 touch-btn">
+            {loading ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ DASHBOARD - Mobile Optimized with Stats Cards
+function Dashboard({ data, onNavigate, isAdmin }) {
+  const stats = useMemo(() => {
+    const openIssues = data.Issues.filter(i => (i.Status || '').toLowerCase() !== 'resolved').length;
+    const totalEnviroStaff = data.Directory.length;
+    const collected = data.Transactions
+      .filter(t => (t.Type || '').toLowerCase() === 'credit')
+      .reduce((sum, t) => sum + Number(t.Amount || 0), 0);
+    const expenses = data.Transactions
+      .filter(t => {
+        const type = (t.Type || '').toLowerCase().trim();
+        return type === 'debit' || type === 'expense';
+      })
+      .reduce((sum, t) => sum + Number(t.Amount || 0), 0);
+    
+    return { openIssues, totalEnviroStaff, collected, expenses };
+  }, [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-2 gap-3">
+        <div 
+          onClick={() => onNavigate('Directory')}
+          className="bg-white rounded-xl p-4 shadow-sm active:scale-95 transition-transform"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalEnviroStaff}</p>
+          <p className="text-xs text-gray-600 mt-1">Total Staff</p>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('Issues')}
+          className="bg-white rounded-xl p-4 shadow-sm active:scale-95 transition-transform"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{stats.openIssues}</p>
+          <p className="text-xs text-gray-600 mt-1">Open Issues</p>
+        </div>
+
+        {isAdmin && (
+          <>
+            <div 
+              onClick={() => onNavigate('Transactions')}
+              className="bg-white rounded-xl p-4 shadow-sm active:scale-95 transition-transform"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xl font-bold text-green-600">{INR.format(stats.collected)}</p>
+              <p className="text-xs text-gray-600 mt-1">Collected</p>
+            </div>
+
+            <div 
+              onClick={() => onNavigate('Transactions')}
+              className="bg-white rounded-xl p-4 shadow-sm active:scale-95 transition-transform"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              </div>
+              <p className="text-xl font-bold text-red-600">{INR.format(stats.expenses)}</p>
+              <p className="text-xs text-gray-600 mt-1">Expenses</p>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Recent Notices Section */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Recent Notices</h3>
+          <button
+            onClick={() => onNavigate('Notices')}
+            className="text-sm text-blue-500 font-medium touch-btn"
+          >
+            View All →
+          </button>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {data.Notices.slice(0, 3).map((notice, i) => (
+            <div 
+              key={i} 
+              onClick={() => onNavigate('Notices')}
+              className="p-4 active:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{notice.Subject}</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatDateDisplay(notice.Date)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Issues Section */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 className="font-semibold text-gray-900">Recent Issues</h3>
+          <button
+            onClick={() => onNavigate('Issues')}
+            className="text-sm text-blue-500 font-medium touch-btn"
+          >
+            View All →
+          </button>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {data.Issues.slice(0, 3).map((issue, i) => (
+            <div 
+              key={i} 
+              onClick={() => onNavigate('Issues')}
+              className="p-4 active:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{issue.Title || issue.Description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className={`status-badge status-${(issue.Status || 'open').toLowerCase().replace(' ', '')}`}>
+                      {issue.Status || 'Open'}
+                    </span>
+                    <span className="text-xs text-gray-500">{issue['Tracking ID']}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ DIRECTORY PAGE - Mobile Optimized Staff List
+function DirectoryPage({ data, isAdmin, onRefresh }) {
+  const nextSerial = useMemo(() => {
+    const ids = data.map(d => Number(d['Serial']) || 0);
+    return ids.length ? Math.max(...ids) + 1 : 1;
+  }, [data]);
+
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeDeptFilter, setActiveDeptFilter] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const filtered = useMemo(() => {
+    let result = data;
+    
+    if (activeDeptFilter) {
+      result = result.filter(r => {
+        const dept = r.Department || r.Designation || 'Other';
+        return dept === activeDeptFilter;
+      });
+    }
+    
+    if (activeFilter === 'active') {
+      result = result.filter(r => (r.Active || '').toLowerCase() === 'yes');
+    } else if (activeFilter === 'inactive') {
+      result = result.filter(r => (r.Active || '').toLowerCase() === 'no' || (r.Active || '').toLowerCase() === 'non-active');
+    }
+    
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r => 
+        Object.values(r).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+    
+    return result;
+  }, [data, search, activeFilter, activeDeptFilter]);
+
+  const deptStats = useMemo(() => {
+    const stats = {};
+    data.forEach(r => {
+      const dept = r.Department || r.Designation || 'Other';
+      if (!stats[dept]) stats[dept] = 0;
+      if ((r.Active || '').toLowerCase() === 'yes') stats[dept]++;
+    });
+    return Object.entries(stats).sort((a, b) => b[1] - a[1]);
+  }, [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search staff..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Filter Chips */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button
+          onClick={() => setActiveFilter('all')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${activeFilter === 'all' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          All ({data.length})
+        </button>
+        <button
+          onClick={() => setActiveFilter('active')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${activeFilter === 'active' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          Active
+        </button>
+        <button
+          onClick={() => setActiveFilter('inactive')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${activeFilter === 'inactive' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          Inactive
+        </button>
+      </div>
+
+      {/* Department Stats */}
+      {deptStats.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          {deptStats.slice(0, 6).map(([dept, count]) => (
+            <button 
+              key={dept} 
+              onClick={() => setActiveDeptFilter(activeDeptFilter === dept ? null : dept)}
+              className={`bg-white rounded-lg p-3 shadow-sm active:scale-95 transition-transform ${activeDeptFilter === dept ? 'ring-2 ring-blue-500' : ''}`}
+            >
+              <p className="text-xs text-gray-600 truncate" title={dept}>{dept}</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{count}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Staff List */}
+      <div className="space-y-2">
+        {filtered.map((row, i) => (
+          <div 
+            key={i} 
+            onClick={() => setViewRow(row)}
+            className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              {row.Photo ? (
+                <img
+                  src={driveDirectLink(row.Photo, 80)}
+                  alt="Photo"
+                  className="w-12 h-12 rounded-full object-cover bg-gray-100"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'flex'; }}
+                />
+              ) : null}
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-medium" style={{display: row.Photo ? 'none' : 'flex'}}>
+                {(row.Name || row['Employee Name'] || 'N')[0]}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900">{row.Name || row['Employee Name']}</p>
+                <p className="text-xs text-gray-500">{row.Department || row.Designation}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`status-badge ${(row.Active || '').toLowerCase() === 'yes' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                    {row.Active || 'No'}
+                  </span>
+                  <span className="text-xs text-gray-500">{row.Shift}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Add Button */}
+      {isAdmin && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+
+      {/* View Modal */}
+      {viewRow && (
+        <DirectoryViewModal 
+          row={viewRow} 
+          onClose={() => setViewRow(null)}
+          onEdit={isAdmin ? () => { setEditRow(viewRow); setViewRow(null); } : null}
+        />
+      )}
+
+      {/* Add/Edit Modal */}
+      {(showAddModal || editRow) && (
+        <DirectoryModal
+          row={editRow}
+          nextSerial={nextSerial}
+          uploading={uploading}
+          onClose={() => { setShowAddModal(false); setEditRow(null); }}
+          onSave={async (data) => {
+            try {
+              setUploading(true);
+              await maybeUploadField(data, 'Directory', 'Photo', 'photo');
+              if (editRow) {
+                await api.upsertRow('Directory', 'Serial', { ...editRow, ...data });
+              } else {
+                await api.createRow('Directory', data);
+              }
+              await onRefresh();
+              setShowAddModal(false);
+              setEditRow(null);
+              showToast('Saved successfully', 'success');
+            } catch (e) {
+              showToast('Failed: ' + String(e), 'error');
+            } finally {
+              setUploading(false);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ✅ DIRECTORY VIEW MODAL - Full screen staff details
+function DirectoryViewModal({ row, onClose, onEdit }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-semibold">Staff Details</h3>
+          <div className="flex items-center gap-2">
+            {onEdit && (
+              <button onClick={onEdit} className="touch-btn p-2 text-blue-500">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+            <button onClick={onClose} className="touch-btn p-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {/* Photo */}
+          <div className="flex justify-center">
+            {row.Photo ? (
+              <img src={driveDirectLink(row.Photo, 200)} alt="Staff" className="w-32 h-32 rounded-full object-cover" />
+            ) : (
+              <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-4xl text-gray-500">
+                {(row.Name || 'N')[0]}
+              </div>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="space-y-3">
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Name</p>
+              <p className="font-medium">{row.Name || row['Employee Name']}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Department</p>
+              <p className="font-medium">{row.Department || row.Designation}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500">Gender</p>
+                <p className="font-medium">{row.Gender || '-'}</p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500">Shift</p>
+                <p className="font-medium">{row.Shift || '-'}</p>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Joined On</p>
+              <p className="font-medium">{formatDateDisplay(row['Joined On'])}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Manager</p>
+              <p className="font-medium">{row.Manager || '-'}</p>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Status</p>
+              <span className={`status-badge ${(row.Active || '').toLowerCase() === 'yes' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                {row.Active || 'No'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Continued in next part due to length...
+
+// ✅ DIRECTORY ADD/EDIT MODAL
+function DirectoryModal({ row, nextSerial, uploading, onClose, onSave }) {
+  const [formData, setFormData] = useState(() => ({
+    Serial: row?.Serial || nextSerial,
+    Name: row?.Name || row?.['Employee Name'] || '',
+    Department: row?.Department || row?.Designation || '',
+    Gender: row?.Gender || '',
+    Shift: row?.Shift || '',
+    'Joined On': row?.['Joined On'] || '',
+    Manager: row?.Manager || '',
+    Active: row?.Active || 'Yes',
+    Photo: row?.Photo || ''
+  }));
+  const [photoPreview, setPhotoPreview] = useState(row?.Photo ? driveDirectLink(row.Photo, 200) : '');
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5000000) return showToast('File too large (max 5MB)', 'error');
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData({...formData, Photo: reader.result});
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-semibold">{row ? 'Edit Staff' : 'Add Staff'}</h3>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          {/* Photo Upload */}
+          <div className="flex flex-col items-center gap-3">
+            {photoPreview ? (
+              <img src={photoPreview} alt="Preview" className="w-24 h-24 rounded-full object-cover" />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-500">
+                {(formData.Name || 'N')[0]}
+              </div>
+            )}
+            <label className="bg-blue-500 text-white px-4 py-2 rounded-lg cursor-pointer touch-btn">
+              Change Photo
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+          </div>
+
+          {/* Form Fields */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Name *</label>
+            <input 
+              type="text" 
+              value={formData.Name} 
+              onChange={e => setFormData({...formData, Name: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn" 
+              required 
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Department</label>
+            <select 
+              value={formData.Department} 
+              onChange={e => setFormData({...formData, Department: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+            >
+              <option value="">Select...</option>
+              <option value="Housekeeping">Housekeeping</option>
+              <option value="Security">Security</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Administration">Administration</option>
+              <option value="Gardening">Gardening</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Gender</label>
+              <select 
+                value={formData.Gender} 
+                onChange={e => setFormData({...formData, Gender: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+              >
+                <option value="">Select...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Shift</label>
+              <select 
+                value={formData.Shift} 
+                onChange={e => setFormData({...formData, Shift: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+              >
+                <option value="">Select...</option>
+                <option value="Day">Day</option>
+                <option value="Night">Night</option>
+                <option value="Rotational">Rotational</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Joined On</label>
+            <input 
+              type="date" 
+              value={formData['Joined On']} 
+              onChange={e => setFormData({...formData, 'Joined On': e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Manager</label>
+            <input 
+              type="text" 
+              value={formData.Manager} 
+              onChange={e => setFormData({...formData, Manager: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Active Status</label>
+            <select 
+              value={formData.Active} 
+              onChange={e => setFormData({...formData, Active: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+            >
+              <option value="Yes">Active</option>
+              <option value="No">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg touch-btn">Cancel</button>
+          <button 
+            onClick={() => onSave(formData)} 
+            disabled={uploading || !formData.Name}
+            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg disabled:opacity-50 touch-btn"
+          >
+            {uploading ? 'Uploading...' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ ISSUES PAGE - Mobile Optimized with Camera Support
+function IssuesPage({ data, isAdmin, onRefresh, session }) {
+  const nextID = useMemo(() => {
+    const ids = data.map(d => {
+      const id = d['Tracking ID'] || '';
+      const match = id.match(/ISSUE-(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    });
+    return ids.length ? Math.max(...ids) + 1 : 1;
+  }, [data]);
+
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [viewRow, setViewRow] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const filtered = useMemo(() => {
+    let result = data;
+    
+    if (statusFilter !== 'all') {
+      result = result.filter(r => (r.Status || 'open').toLowerCase() === statusFilter);
+    }
+    
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r => 
+        Object.values(r).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+    
+    return result.sort((a, b) => new Date(b.Date || 0) - new Date(a.Date || 0));
+  }, [data, search, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: data.length, open: 0, inprogress: 0, resolved: 0 };
+    data.forEach(issue => {
+      const status = (issue.Status || 'open').toLowerCase().replace(' ', '');
+      if (counts[status] !== undefined) counts[status]++;
+    });
+    return counts;
+  }, [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search issues..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Status Filter Chips */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {['all', 'open', 'inprogress', 'resolved'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${statusFilter === status ? 'active' : 'bg-gray-100 text-gray-700'}`}
+          >
+            {status === 'all' ? 'All' : status === 'inprogress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)} ({statusCounts[status] || 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Issues List */}
+      <div className="space-y-2">
+        {filtered.map((issue, i) => (
+          <div 
+            key={i} 
+            onClick={() => setViewRow(issue)}
+            className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <span className={`status-badge status-${(issue.Status || 'open').toLowerCase().replace(' ', '')}`}>
+                {issue.Status || 'Open'}
+              </span>
+              <span className="text-xs text-gray-500">{formatDateDisplay(issue.Date)}</span>
+            </div>
+            <p className="font-medium text-gray-900 mb-1">{issue.Title || issue.Description}</p>
+            <p className="text-sm text-gray-600 line-clamp-2 mb-2">{issue.Description}</p>
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{issue['Tracking ID']}</span>
+              <span>{issue['Flat Number'] || issue.Tower}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Add Button */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        className="fixed bottom-24 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+      >
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* View Modal */}
+      {viewRow && (
+        <IssueViewModal 
+          row={viewRow} 
+          onClose={() => setViewRow(null)}
+          isAdmin={isAdmin}
+          onRefresh={onRefresh}
+        />
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <IssueModal
+          nextID={nextID}
+          session={session}
+          uploading={uploading}
+          onClose={() => setShowAddModal(false)}
+          onSave={async (data) => {
+            try {
+              setUploading(true);
+              await maybeUploadField(data, 'Issues', 'Photo', 'issue');
+              await api.createRow('Issues', data);
+              await onRefresh();
+              setShowAddModal(false);
+              showToast('Issue reported successfully', 'success');
+            } catch (e) {
+              showToast('Failed: ' + String(e), 'error');
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ✅ NOTICE VIEW MODAL
+function NoticeViewModal({ notice, onClose }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Notice</h3>
+          <button onClick={onClose} className="touch-btn p-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="text-xs text-gray-500">Subject</p>
+            <p className="font-semibold text-lg">{notice.Subject}</p>
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="text-xs text-gray-500 mb-2">Description</p>
+            <p className="text-sm whitespace-pre-wrap">{notice.Description}</p>
+          </div>
+
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <p className="text-xs text-gray-500">Date Posted</p>
+            <p className="font-medium">{formatDateDisplay(notice.Date)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ NOTICE ADD MODAL
+function NoticeAddModal({ onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    Date: new Date().toISOString().split('T')[0],
+    Subject: '',
+    Description: ''
+  });
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-semibold">New Notice</h3>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Subject *</label>
+            <input 
+              type="text" 
+              value={formData.Subject} 
+              onChange={e => setFormData({...formData, Subject: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              placeholder="Notice subject"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Description *</label>
+            <textarea
+              value={formData.Description}
+              onChange={e => setFormData({...formData, Description: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              rows="6"
+              placeholder="Notice details..."
+              required
+            />
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg touch-btn">Cancel</button>
+          <button 
+            onClick={() => onSave(formData)} 
+            disabled={!formData.Subject || !formData.Description}
+            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg disabled:opacity-50 touch-btn"
+          >
+            Publish Notice
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ DOCUMENTS PAGE - Mobile Optimized
+function DocumentsPage({ data }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r => 
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search documents..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Documents List */}
+      <div className="space-y-2">
+        {filtered.map((doc, i) => (
+          <a 
+            key={i} 
+            href={doc.URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors block"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900">{doc.Name}</p>
+                <p className="text-xs text-gray-500 mt-1">{doc.Category}</p>
+              </div>
+              <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ✅ VOTERS PAGE - Mobile Optimized
+function VotersPage({ data }) {
+  const [search, setSearch] = useState('');
+  const [towerFilter, setTowerFilter] = useState(null);
+
+  const filtered = useMemo(() => {
+    let result = data;
+    
+    if (towerFilter) {
+      result = result.filter(r => r.Tower === towerFilter);
+    }
+    
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r => 
+        Object.values(r).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+    
+    return result;
+  }, [data, search, towerFilter]);
+
+  const towerCounts = useMemo(() => {
+    const counts = {};
+    data.forEach(v => {
+      const tower = v.Tower || 'Unknown';
+      counts[tower] = (counts[tower] || 0) + 1;
+    });
+    return counts;
+  }, [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search voters..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Tower Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button
+          onClick={() => setTowerFilter(null)}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${!towerFilter ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          All ({data.length})
+        </button>
+        {TOWERS.map(tower => (
+          <button
+            key={tower}
+            onClick={() => setTowerFilter(tower)}
+            className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${towerFilter === tower ? 'active' : 'bg-gray-100 text-gray-700'}`}
+          >
+            Tower {tower} ({towerCounts[tower] || 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton data={filtered} filename="voters" label="Export" />
+      </div>
+
+      {/* Voters List */}
+      <div className="space-y-2">
+        {filtered.map((voter, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{voter.Name}</p>
+                <p className="text-sm text-gray-600 mt-1">Tower {voter.Tower} - Flat {voter['Flat Number']}</p>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{voter['Voter Type']}</span>
+                  {voter['Voter ID'] && <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">{voter['Voter ID']}</span>}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ✅ TENANTS PAGE - Mobile Optimized (Admin Only)
+function TenantsPage({ data, isAdmin, onRefresh }) {
+  const [search, setSearch] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r => 
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search tenants..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton data={filtered} filename="tenants" label="Export" />
+      </div>
+
+      {/* Tenants List */}
+      <div className="space-y-2">
+        {filtered.map((tenant, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="font-medium text-gray-900">{tenant['Tenant Name']}</p>
+                <p className="text-sm text-gray-600">Tower {tenant.Tower} - Flat {tenant['Flat Number']}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <p className="text-gray-500">Move In</p>
+                <p className="font-medium">{formatDateDisplay(tenant['Move In Date'])}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Rent</p>
+                <p className="font-medium">{tenant['Monthly Rent'] ? INR.format(tenant['Monthly Rent']) : '-'}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Add Button */}
+      {isAdmin && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <TenantModal 
+          onClose={() => setShowAddModal(false)}
+          onSave={async (data) => {
+            try {
+              await api.createRow('Tenants', data);
+              await onRefresh();
+              setShowAddModal(false);
+              showToast('Tenant added successfully', 'success');
+            } catch (e) {
+              showToast('Failed: ' + String(e), 'error');
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ✅ TENANT ADD MODAL
+function TenantModal({ onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    Tower: '',
+    'Flat Number': '',
+    'Tenant Name': '',
+    'Move In Date': '',
+    'Monthly Rent': ''
+  });
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-semibold">Add Tenant</h3>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">Tower *</label>
+              <select 
+                value={formData.Tower} 
+                onChange={e => setFormData({...formData, Tower: e.target.value, 'Flat Number': ''})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+                required
+              >
+                <option value="">Select...</option>
+                {TOWERS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Flat *</label>
+              <select 
+                value={formData['Flat Number']} 
+                onChange={e => setFormData({...formData, 'Flat Number': e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+                disabled={!formData.Tower}
+                required
+              >
+                <option value="">Select...</option>
+                {formData.Tower && generateFlatNumbers(formData.Tower).map(f => 
+                  <option key={f} value={f}>{f}</option>
+                )}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Tenant Name *</label>
+            <input 
+              type="text" 
+              value={formData['Tenant Name']} 
+              onChange={e => setFormData({...formData, 'Tenant Name': e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Move In Date</label>
+            <input 
+              type="date" 
+              value={formData['Move In Date']} 
+              onChange={e => setFormData({...formData, 'Move In Date': e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Monthly Rent</label>
+            <input 
+              type="number" 
+              value={formData['Monthly Rent']} 
+              onChange={e => setFormData({...formData, 'Monthly Rent': e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              placeholder="Amount in ₹"
+            />
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg touch-btn">Cancel</button>
+          <button 
+            onClick={() => onSave(formData)} 
+            disabled={!formData['Tenant Name'] || !formData.Tower || !formData['Flat Number']}
+            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg disabled:opacity-50 touch-btn"
+          >
+            Add Tenant
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ TRANSACTIONS PAGE - Mobile Optimized (Admin Only)
+function TransactionsPage({ data }) {
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  const filtered = useMemo(() => {
+    let result = data;
+    
+    if (typeFilter !== 'all') {
+      result = result.filter(r => {
+        const type = (r.Type || '').toLowerCase().trim();
+        return type === typeFilter || (typeFilter === 'debit' && type === 'expense');
+      });
+    }
+    
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r => 
+        Object.values(r).some(v => String(v).toLowerCase().includes(q))
+      );
+    }
+    
+    return result.sort((a, b) => new Date(b.Date || 0) - new Date(a.Date || 0));
+  }, [data, search, typeFilter]);
+
+  const stats = useMemo(() => {
+    const credit = data.filter(t => (t.Type || '').toLowerCase() === 'credit')
+      .reduce((sum, t) => sum + Number(t.Amount || 0), 0);
+    const debit = data.filter(t => {
+      const type = (t.Type || '').toLowerCase().trim();
+      return type === 'debit' || type === 'expense';
+    }).reduce((sum, t) => sum + Number(t.Amount || 0), 0);
+    return { credit, debit, balance: credit - debit };
+  }, [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <p className="text-xs text-gray-500">Credit</p>
+          <p className="text-lg font-bold text-green-600">{INR.format(stats.credit)}</p>
+        </div>
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <p className="text-xs text-gray-500">Debit</p>
+          <p className="text-lg font-bold text-red-600">{INR.format(stats.debit)}</p>
+        </div>
+        <div className="bg-white rounded-lg p-3 shadow-sm">
+          <p className="text-xs text-gray-500">Balance</p>
+          <p className="text-lg font-bold text-blue-600">{INR.format(stats.balance)}</p>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search transactions..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Type Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        <button
+          onClick={() => setTypeFilter('all')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${typeFilter === 'all' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setTypeFilter('credit')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${typeFilter === 'credit' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          Credit
+        </button>
+        <button
+          onClick={() => setTypeFilter('debit')}
+          className={`filter-btn px-4 py-2 rounded-lg font-medium whitespace-nowrap touch-btn ${typeFilter === 'debit' ? 'active' : 'bg-gray-100 text-gray-700'}`}
+        >
+          Debit
+        </button>
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton data={filtered} filename="transactions" label="Export" />
+      </div>
+
+      {/* Transactions List */}
+      <div className="space-y-2">
+        {filtered.map((txn, i) => {
+          const isCredit = (txn.Type || '').toLowerCase() === 'credit';
+          return (
+            <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{txn.Description || txn.Category}</p>
+                  <p className="text-xs text-gray-500 mt-1">{formatDateDisplay(txn.Date)}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-lg font-bold ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
+                    {isCredit ? '+' : '-'}{INR.format(txn.Amount || 0)}
+                  </p>
+                  <span className={`text-xs px-2 py-1 rounded ${isCredit ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {txn.Type}
+                  </span>
+                </div>
+              </div>
+              {txn.Category && txn.Description && (
+                <p className="text-xs text-gray-500">Category: {txn.Category}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ✅ OPENING BALANCES PAGE (Admin Only)
+function OpeningBalancesPage({ data }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r => 
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  const totalBalance = useMemo(() => 
+    data.reduce((sum, r) => sum + Number(r['Opening Balance'] || 0), 0)
+  , [data]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Total Card */}
+      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 shadow-lg text-white">
+        <p className="text-sm opacity-90">Total Opening Balance</p>
+        <p className="text-3xl font-bold mt-1">{INR.format(totalBalance)}</p>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search balances..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton data={filtered} filename="opening_balances" label="Export" />
+      </div>
+
+      {/* Balances List */}
+      <div className="space-y-2">
+        {filtered.map((balance, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">Tower {balance.Tower} - {balance['Flat Number']}</p>
+                <p className="text-sm text-gray-600 mt-1">{balance['Owner Name']}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xl font-bold text-blue-600">{INR.format(balance['Opening Balance'] || 0)}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ✅ CHART OF ACCOUNTS PAGE (Admin Only)
+function ChartOfAccountsPage({ data }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r => 
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search accounts..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end">
+        <ExportButton data={filtered} filename="chart_of_accounts" label="Export" />
+      </div>
+
+      {/* Accounts List */}
+      <div className="space-y-2">
+        {filtered.map((account, i) => (
+          <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{account['Account Name']}</p>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{account['Account Type']}</span>
+                  {account['Account Code'] && <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">{account['Account Code']}</span>}
+                </div>
+              </div>
+            </div>
+            {account.Description && (
+              <p className="text-sm text-gray-600 mt-2">{account.Description}</p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ✅ AI CHATBOT - Floating Button
+function AIChatbot() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: "Hello! I'm your Global Hillview assistant. How can I help you today?" }
+  ]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isOpen]);
+
+  const handleSend = async () => {
+    if (!input.trim() || loading) return;
+    const text = input.trim();
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
+    setLoading(true);
+
+    // ❗ TEMP: fake “AI” response (no external API)
+    setTimeout(() => {
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: "Thanks for your message. Our team will review it shortly.\n\n(Real AI reply can be wired up on the backend later.)" }
+      ]);
+      setLoading(false);
+    }, 600);
+  };
+
+  if (!isOpen) {
+    // Floating open button
+    return (
+      <button
+        className="fixed bottom-24 right-4 w-14 h-14 rounded-full bg-blue-500 text-white shadow-lg flex items-center justify-center z-50 touch-btn"
+        onClick={() => setIsOpen(true)}
+      >
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M8 10h.01M12 10h.01M16 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    );
+  }
+
+  return (
+    <>
+      {/* Backdrop on mobile */}
+      <div
+        className="fixed inset-0 bg-black/30 z-40"
+        onClick={() => setIsOpen(false)}
+      />
+
+      <div className="fixed bottom-24 right-4 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-blue-500 text-white">
+          <div>
+            <p className="text-sm font-semibold">GHV Assistant</p>
+            <p className="text-xs text-blue-100">Ask about facilities, issues, notices, etc.</p>
+          </div>
+          <button
+            className="p-1 rounded-full hover:bg-blue-600 touch-btn"
+            onClick={() => setIsOpen(false)}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 px-3 py-2 space-y-2 overflow-y-auto max-h-80 bg-gray-50">
+          {messages.map((m, idx) => (
+            <div
+              key={idx}
+              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={
+                  'px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap max-w-[85%] ' +
+                  (m.role === 'user'
+                    ? 'bg-blue-500 text-white rounded-br-sm'
+                    : 'bg-white text-gray-800 rounded-bl-sm shadow-sm')
+                }
+              >
+                {m.content}
+              </div>
+            </div>
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="px-3 py-2 rounded-2xl bg-white text-xs text-gray-500 shadow-sm">
+                Typing…
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-gray-200 px-3 py-2 bg-white flex items-center gap-2">
+          <input
+            type="text"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none touch-btn"
+            placeholder="Type your question..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+          />
+          <button
+            onClick={handleSend}
+            disabled={loading || !input.trim()}
+            className="w-9 h-9 rounded-full bg-blue-500 text-white flex items-center justify-center disabled:opacity-50 touch-btn"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M5 12l14-7-7 14-2-5-5-2z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+// ✅ ISSUE VIEW MODAL with Star Rating
+function IssueViewModal({ row, onClose, isAdmin, onRefresh }) {
+  const [rating, setRating] = useState(row.Rating || 0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(!!row.Rating);
+  const [adminNotes, setAdminNotes] = useState(row['Admin Notes'] || '');
+  const [status, setStatus] = useState(row.Status || 'Open');
+  const [updating, setUpdating] = useState(false);
+
+  const handleRatingSubmit = async (stars) => {
+    setSubmittingRating(true);
+    try {
+      await api.upsertRow('Issues', 'Tracking ID', { ...row, Rating: stars });
+      setRating(stars);
+      setRatingSubmitted(true);
+      showToast('Thank you for your feedback!', 'success');
+      await onRefresh();
+    } catch (e) {
+      showToast('Failed to submit rating', 'error');
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
+  const handleAdminUpdate = async () => {
+    setUpdating(true);
+    try {
+      await api.upsertRow('Issues', 'Tracking ID', { ...row, Status: status, 'Admin Notes': adminNotes });
+      showToast('Issue updated successfully', 'success');
+      await onRefresh();
+      onClose();
+    } catch (e) {
+      showToast('Failed to update', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Issue Details</h3>
+          <button onClick={onClose} className="touch-btn p-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        
+        <div className="p-4 space-y-4">
+      
+          {/* Status Badge */}
+          <div className="flex items-center justify-between">
+            <span className={`status-badge status-${(row.Status || 'open').toLowerCase().replace(' ', '')}`}>
+              {row.Status || 'Open'}
+            </span>
+            <span className="text-sm text-gray-500">{row['Tracking ID']}</span>
+          </div>
+
+          {/* Issue Details */}
+          <div className="space-y-3">
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Title</p>
+              <p className="font-medium">{row.Title || row.Description}</p>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Description</p>
+              <p className="text-sm">{row.Description}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500">Flat Number</p>
+                <p className="font-medium">{row['Flat Number'] || '-'}</p>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500">Tower</p>
+                <p className="font-medium">{row.Tower || '-'}</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-xs text-gray-500">Reported On</p>
+              <p className="font-medium">{formatDateDisplay(row.Date)}</p>
+            </div>
+
+            {row.Photo && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-xs text-gray-500 mb-2">Attached Photo</p>
+                <img src={driveDirectLink(row.Photo, 400)} alt="Issue" className="w-full rounded-lg" />
+              </div>
+            )}
+
+            {row['Admin Notes'] && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-xs text-blue-600 font-medium mb-1">Admin Notes</p>
+                <p className="text-sm">{row['Admin Notes']}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Star Rating - Show only if resolved */}
+          {(row.Status || '').toLowerCase() === 'resolved' && (
+            <div className="star-rating-container">
+              {!ratingSubmitted ? (
+                <>
+                  <p className="text-center font-semibold text-gray-800 mb-3">Rate Your Experience</p>
+                  <div className="flex justify-center gap-2 mb-3">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        disabled={submittingRating}
+                        onClick={() => handleRatingSubmit(star)}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className={`star ${(hoverRating || rating) >= star ? 'filled' : ''}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-center text-sm text-gray-600">How satisfied are you with the resolution?</p>
+                </>
+              ) : (
+                <div className="rating-submitted">
+                  <p>✓ Thank you for rating us {rating} star{rating !== 1 ? 's' : ''}!</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Admin Controls */}
+          {isAdmin && (
+            <div className="border-t pt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Update Status</label>
+                <select 
+                  value={status} 
+                  onChange={e => setStatus(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg touch-btn"
+                >
+                  <option value="Open">Open</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Admin Notes</label>
+                <textarea
+                  value={adminNotes}
+                  onChange={e => setAdminNotes(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg touch-btn"
+                  rows="3"
+                  placeholder="Add notes about resolution..."
+                />
+              </div>
+
+              <button
+                onClick={handleAdminUpdate}
+                disabled={updating}
+                className="w-full bg-blue-500 text-white py-3 rounded-lg disabled:opacity-50 touch-btn"
+              >
+                {updating ? 'Updating...' : 'Update Issue'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ ISSUE ADD MODAL with Camera Support
+
+function IssueModal({ nextID, session, uploading, onClose, onSave }) {
+  // ✅ Auto-detect Tower / Flat from username like "T3-1204"
+  const residentInfo = React.useMemo(() => {
+    const currentUser = session?.username || '';
+    // Example expected pattern: T3-1204  (T<tower>-<flat>)
+    const match = currentUser.match(/^T(\d+)-(\d+)$/i);
+    if (match) {
+      return {
+        tower: match[1], // "3"
+        flat: match[2]   // "1204"
+      };
+    }
+    return null;
+  }, [session?.username]);
+
+  const [formData, setFormData] = useState({
+    'Tracking ID': `ISSUE-${String(nextID).padStart(4, '0')}`,
+    Date: new Date().toISOString().split('T')[0],
+    Tower: residentInfo ? residentInfo.tower : '',
+    'Flat Number': residentInfo ? residentInfo.flat : '',
+    Category: '',           // ✅ NEW FIELD
+    Title: '',
+    Description: '',
+    Status: 'Open',
+    Photo: '',
+    'Reported By': session.username
+  });
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5000000) return showToast('File too large (max 5MB)', 'error');
+    
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFormData({...formData, Photo: reader.result});
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCameraCapture = (e) => {
+    handlePhotoChange(e);
+    setShowCamera(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <h3 className="text-lg font-semibold">Report Issue</h3>
+        </div>
+        
+        <div className="p-4 space-y-4">
+          
+          {/* Photo Upload/Camera */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Add Photo (Optional)</label>
+            {photoPreview && (
+              <img src={photoPreview} alt="Preview" className="w-full rounded-lg" />
+            )}
+            <div className="flex gap-2">
+              <label className="flex-1 bg-blue-500 text-white px-4 py-3 rounded-lg cursor-pointer text-center touch-btn">
+                📷 Camera
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleCameraCapture} />
+              </label>
+              <label className="flex-1 bg-gray-500 text-white px-4 py-3 rounded-lg cursor-pointer text-center touch-btn">
+                📁 Gallery
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </label>
+            </div>
+          </div>
+
+          {/* Category */}
+<div>
+  <label className="block text-sm font-medium mb-1">Category *</label>
+  <select
+    value={formData.Category}
+    onChange={(e) => setFormData({ ...formData, Category: e.target.value })}
+    className="w-full px-4 py-2 border rounded-lg touch-btn"
+    required
+  >
+    <option value="">Select Category...</option>
+    {CATEGORIES.map((c) => (
+      <option key={c} value={c}>{c}</option>
+    ))}
+  </select>
+</div>
+
+
+          {/* Form Fields */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              
+              <label className="block text-sm font-medium mb-1">Tower *</label>
+              <select 
+                value={formData.Tower} 
+                onChange={e => setFormData({...formData, Tower: e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+                required
+              >
+                <option value="">Select...</option>
+                {TOWERS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Flat *</label>
+              <select 
+                value={formData['Flat Number']} 
+                onChange={e => setFormData({...formData, 'Flat Number': e.target.value})}
+                className="w-full px-4 py-2 border rounded-lg touch-btn"
+                disabled={!formData.Tower}
+                required
+              >
+                <option value="">Select...</option>
+                {formData.Tower && generateFlatNumbers(formData.Tower).map(f => 
+                  <option key={f} value={f}>{f}</option>
+                )}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Title *</label>
+            <input 
+              type="text" 
+              value={formData.Title} 
+              onChange={e => setFormData({...formData, Title: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              placeholder="Brief title for the issue"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Description *</label>
+            <textarea
+              value={formData.Description}
+              onChange={e => setFormData({...formData, Description: e.target.value})}
+              className="w-full px-4 py-2 border rounded-lg touch-btn"
+              rows="4"
+              placeholder="Describe the issue in detail..."
+              required
+            />
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-gray-200 flex gap-3 sticky bottom-0 bg-white">
+          <button onClick={onClose} className="flex-1 px-4 py-3 border rounded-lg touch-btn">Cancel</button>
+          <button 
+            onClick={() => onSave(formData)} 
+            disabled={uploading || !formData.Title || !formData.Tower || !formData['Flat Number']}
+            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg disabled:opacity-50 touch-btn"
+          >
+            {uploading ? 'Submitting...' : 'Submit Issue'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ NOTICES PAGE - Mobile Optimized
+function NoticesPage({ data, isAdmin, onRefresh }) {
+  const [search, setSearch] = useState('');
+  const [viewNotice, setViewNotice] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return data;
+    const q = search.toLowerCase();
+    return data.filter(r => 
+      Object.values(r).some(v => String(v).toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  return (
+    <div className="space-y-4 fade-in pb-4">
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl p-3 shadow-sm">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search notices..."
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg touch-btn"
+        />
+      </div>
+
+      {/* Notices List */}
+      <div className="space-y-2">
+        {filtered.map((notice, i) => (
+          <div 
+            key={i} 
+            onClick={() => setViewNotice(notice)}
+            className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 mb-1">{notice.Subject}</p>
+                <p className="text-sm text-gray-600 line-clamp-2 mb-2">{notice.Description}</p>
+                <p className="text-xs text-gray-500">{formatDateDisplay(notice.Date)}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Floating Add Button */}
+      {isAdmin && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="fixed bottom-24 right-4 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg flex items-center justify-center z-40 active:scale-95 transition-transform"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+
+      {/* View Modal */}
+      {viewNotice && (
+        <NoticeViewModal notice={viewNotice} onClose={() => setViewNotice(null)} />
+      )}
+
+      {/* Add Modal */}
+{showAddModal && (
+  <NoticeAddModal 
+    onClose={() => setShowAddModal(false)}
+    onSave={async (data) => {
+      try {
+        await api.createRow('Notices', data);
+        await onRefresh();
+        setShowAddModal(false);
+        showToast('Notice published successfully', 'success');
+      } catch (e) {
+        showToast('Failed: ' + String(e), 'error');
+      }
+    }}
+  />
+)}
+    </div>
+  );
+}
+
+// ✅ MAIN APP COMPONENT
+function App() {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState({
+    Directory: [],
+    Notices: [],
+    Issues: [],
+    Transactions: [],
+    Documents: [],
+    Voters: [],
+    OpeningBalances: [],
+    ChartOfAccounts: [],
+    Tenants: []
+  });
+  const [activeView, setActiveView] = useState('dashboard');
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [theme, toggleTheme] = useDarkMode();
+
+  // ✅ Initialize Session
+  useEffect(() => {
+    const token = localStorage.getItem('session');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    api.sessionInfo(token)
+      .then(r => {
+        if (r?.ok) {
+          setSession({
+            token,
+            role: (r.role || 'user').toLowerCase(),
+            username: r.username || 'user'
+          });
+        } else {
+          localStorage.removeItem('session');
+        }
+      })
+      .catch(() => localStorage.removeItem('session'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // ✅ Load All Data
+  const loadData = async () => {
+    if (!session) return;
+    setLoading(true);
+    try {
+      const [directory, notices, issues, transactions, documents, voters, balances, accounts, tenants] = await Promise.all([
+        api.list.Directory(),
+        api.list.Notices(),
+        api.list.Issues(),
+        session.role === 'admin' ? api.list.Transactions() : Promise.resolve({ rows: [] }),
+        api.list.Documents(),
+        api.list.Voters(),
+        session.role === 'admin' ? api.list.OpeningBalances() : Promise.resolve({ rows: [] }),
+        session.role === 'admin' ? api.list.ChartOfAccounts() : Promise.resolve({ rows: [] }),
+        session.role === 'admin' ? api.list.Tenants() : Promise.resolve({ rows: [] })
+      ]);
+
+      setData({
+        Directory: directory.rows || [],
+        Notices: notices.rows || [],
+        Issues: issues.rows || [],
+        Transactions: transactions.rows || [],
+        Documents: documents.rows || [],
+        Voters: voters.rows || [],
+        OpeningBalances: balances.rows || [],
+        ChartOfAccounts: accounts.rows || [],
+        Tenants: tenants.rows || []
+      });
+    } catch (e) {
+      console.error('Load error:', e);
+      showToast('Failed to load data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (session) loadData();
+  }, [session]);
+
+  // ✅ Handle Logout
+  const handleLogout = () => {
+    localStorage.removeItem('session');
+    setSession(null);
+    setActiveView('dashboard');
+    showToast('Logged out successfully', 'success');
+  };
+
+  // ✅ Handle Navigation
+  const handleNavigate = (view) => {
+    setActiveView(view);
+    setShowMoreMenu(false);
+    window.scrollTo(0, 0);
+  };
+
+  // ✅ Render Login Screen
+  if (!session) {
+    return <LoginScreen onSuccess={setSession} />;
+  }
+
+  // ✅ Render Loading Screen
+  if (loading && !data.Directory.length) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const isAdmin = session.role === 'admin';
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <MobileHeader 
+        session={session}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        onRefresh={loadData}
+        loading={loading}
+        onPasswordChange={() => setShowPasswordModal(true)}
+        onLogout={handleLogout}
+      />
+
+      {/* Main Content */}
+      <div className="px-4 pt-4">
+        {activeView === 'dashboard' && (
+          <Dashboard data={data} onNavigate={handleNavigate} isAdmin={isAdmin} />
+        )}
+        {activeView === 'Directory' && (
+          <DirectoryPage data={data.Directory} isAdmin={isAdmin} onRefresh={loadData} />
+        )}
+        {activeView === 'Issues' && (
+          <IssuesPage data={data.Issues} isAdmin={isAdmin} onRefresh={loadData} session={session} />
+        )}
+        {activeView === 'Notices' && (
+          <NoticesPage data={data.Notices} isAdmin={isAdmin} onRefresh={loadData} />
+        )}
+        {activeView === 'Documents' && (
+          <DocumentsPage data={data.Documents} />
+        )}
+        {activeView === 'Voters' && (
+          <VotersPage data={data.Voters} />
+        )}
+        {activeView === 'Tenants' && isAdmin && (
+          <TenantsPage data={data.Tenants} isAdmin={isAdmin} onRefresh={loadData} />
+        )}
+        {activeView === 'Transactions' && isAdmin && (
+          <TransactionsPage data={data.Transactions} />
+        )}
+        {activeView === 'OpeningBalances' && isAdmin && (
+          <OpeningBalancesPage data={data.OpeningBalances} />
+        )}
+        {activeView === 'ChartOfAccounts' && isAdmin && (
+          <ChartOfAccountsPage data={data.ChartOfAccounts} />
+        )}
+      </div>
+
+      <BottomNavigation 
+        activeView={activeView}
+        onNavigate={handleNavigate}
+        isAdmin={isAdmin}
+      />
+
+      {/* More Menu Modal */}
+      {showMoreMenu && (
+        <MoreMenuModal 
+          isAdmin={isAdmin}
+          onNavigate={handleNavigate}
+          onClose={() => setShowMoreMenu(false)}
+        />
+      )}
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <ChangePasswordModal 
+          username={session.username}
+          onClose={() => setShowPasswordModal(false)}
+        />
+      )}
+
+      {/* Show More Menu when "more" tab is clicked */}
+      {activeView === 'more' && (
+        <MoreMenuModal 
+          isAdmin={isAdmin}
+          onNavigate={handleNavigate}
+          onClose={() => handleNavigate('dashboard')}
+        />
+      )}
+
+      {/* Chatbot - INSIDE App component */}
+      {activeView === 'dashboard' && <AIChatbot />}
+
+
+    </div>
+  );
+}
+
+// Export for debugging
+try { 
+  window.ProductionApp = App; 
+} catch(e) { 
+  console.error('Prod App export failed:', e); 
+}
+
+// Boot the application
+(async () => {
+  try {
+    console.log('🔄 Testing backend connection...');
+    const testResult = await getJSON('test').catch(() => ({ ok: false }));
+    
+    if (!testResult.ok) {
+      console.warn('⚠️ Backend test failed, but continuing...');
+    } else {
+      console.log('✅ Backend connected successfully');
+    }
+
+    // Render app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+    {activeView === 'dashboard' && <AIChatbot />}
+    console.log('✅ App rendered successfully');
+  } catch (error) {
+    console.error('❌ Boot error:', error);
+    document.getElementById('root').innerHTML = `
+      <div class="min-h-screen flex items-center justify-center bg-gray-50">
+        <div class="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
+          <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Connection Error</h2>
+          <p class="text-gray-600 mb-4">Unable to connect to the backend server.</p>
+          <button onclick="location.reload()" class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    `;
+  }
+})();
+</script>
+</body>
+</html>
